@@ -1,5 +1,7 @@
 'use client'
+import { Api } from '@/app/services/api-client'
 import { cn } from '@/lib/utils'
+import { Product } from '@prisma/client'
 import { Search } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
@@ -10,12 +12,18 @@ interface Props {
 
 export const SearchInput: React.FC<Props> = ({ className }) => {
 
+	const [searchQuery, setSearchQuery] = React.useState('')
+	const [products, setProducts] = React.useState<Product[]>([])
 	const [focused, setFocused] = React.useState(false)
 	const ref = React.useRef(null)
 
 	useClickAway(ref, () => {
     setFocused(false)
   })
+
+	React.useEffect(() => {
+		Api.products.search(searchQuery).then(items => {setProducts(items)});
+	}, [searchQuery])
 
 	return (
 		<>
@@ -31,20 +39,28 @@ export const SearchInput: React.FC<Props> = ({ className }) => {
 					className='rounded-2xl outline-none w-full bg-gray-100 pl-11'
 					type='text'
 					placeholder='Найти пиццу...'
+					value={searchQuery}
 					onFocus={() => setFocused(true)}
+					onChange={(e) => setSearchQuery(e.target.value)}
 				/>
 				<div className={cn('absolute w-full bg-white rounded-xl py-2 top-14 shadow-md transition-all duration-200 invisible opacity-0 z-30', focused && 'visible opacity-100 top-12')}>
-					<Link 
-						href='/product/1'
-						className='flex items-center gap-3 w-full px-3 py-2 hover:bg-primary/10'>
-						<img
-						className='rounded-sm h-8 w-8'
-						src='https://media.dodostatic.net/image/r:584x584/11EEF9E43DC39C94AA5765DBF1C97100.avif'>
-						</img>
-						<span>
-							Пицца 1
-						</span>
-					</Link>	
+					{
+						products.map((product) => (
+							<Link 
+								key={product.id}
+								href={`/product/${product.id}`}
+								className='flex items-center gap-3 w-full px-3 py-2 hover:bg-primary/10'>
+								<img
+									className='rounded-sm h-8 w-8'
+									src={product.imageUrl}
+									alt={product.name}>
+								</img>
+								<span>
+									{product.name}
+								</span>
+							</Link>
+						))
+					}	
 				</div>
 			</div>
 		</>
