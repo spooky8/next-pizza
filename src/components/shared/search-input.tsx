@@ -1,11 +1,11 @@
 'use client'
-import { Api } from '@/app/services/api-client'
 import { cn } from '@/lib/utils'
+import { Api } from '@/services/api-client'
 import { Product } from '@prisma/client'
 import { Search } from 'lucide-react'
 import Link from 'next/link'
 import React from 'react'
-import { useClickAway } from 'react-use'
+import { useClickAway, useDebounce } from 'react-use'
 interface Props {
 	className?: string;
 }
@@ -21,9 +21,19 @@ export const SearchInput: React.FC<Props> = ({ className }) => {
     setFocused(false)
   })
 
-	React.useEffect(() => {
-		Api.products.search(searchQuery).then(items => {setProducts(items)});
-	}, [searchQuery])
+	useDebounce(async () => {
+		try {
+			Api.products.search(searchQuery).then(items => {setProducts(items)});
+		} catch (error) {
+			console.log(error)
+		}
+	},500, [searchQuery])
+
+	const onClickItem = () => {
+		setFocused(false);
+		setSearchQuery('');
+		setProducts([]);
+	}
 
 	return (
 		<>
@@ -47,6 +57,7 @@ export const SearchInput: React.FC<Props> = ({ className }) => {
 					{
 						products.map((product) => (
 							<Link 
+								onClick={onClickItem}
 								key={product.id}
 								href={`/product/${product.id}`}
 								className='flex items-center gap-3 w-full px-3 py-2 hover:bg-primary/10'>
